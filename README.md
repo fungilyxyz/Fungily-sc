@@ -14,11 +14,11 @@ Fungily is composed of modular products that work together to provide a full-sta
 
 | Module | Description |
 |--------|-------------|
-| [**Fungily NFTs Launchpad**](./Fungily%20NFTs%20Launchpad/README.md) | Create, configure, and mint NFTs with liquidity-backed presales. |
-| [**Fungily Token Presale**](./Token%20Presale/README.md) | Launch tokens with fair and gated presale options, and bootstrap liquidity. |
-| [**Fungily Token Swap**](./Token%20Swap/README.md) | Swap tokens via AMM similar to Uniswap V3 with efficient pricing. |
-| [**Fungily NFT Swap**](./NFT%20Swap/README.md) | Buy/sell NFTs using an AMM model based on bonding curves. |
-| [**Fungily Marketplace**](./Marketplace/README.md) | A liquidity-integrated NFT marketplace for buying, selling, and discovering NFTs. |
+| [**Fungily NFTs Launchpad**](src/Fungily%20NFTs%20Launchpad/README.md) | Create, configure, and mint NFTs with liquidity-backed presales. |
+| [**Fungily Token Presale**](src/Token%20Presale/README.md) | Launch tokens with fair and gated presale options, and bootstrap liquidity. |
+| [**Fungily Token Swap**](src/Token%20Swap/README.md) | Swap tokens via AMM similar to Uniswap V3 with efficient pricing. |
+| [**Fungily NFT Swap**](src/NFT%20Swap/README.md) | Buy/sell NFTs using an AMM model based on bonding curves. |
+| [**Fungily Marketplace**](src/Marketplace/README.md) | A liquidity-integrated NFT marketplace for buying, selling, and discovering NFTs. |
 
 ---
 
@@ -36,15 +36,14 @@ Fungily is composed of modular products that work together to provide a full-sta
 
 Each product module contains its own technical documentation and implementation details. Browse them here:
 
-- [`Fungily NFTs Launchpad`](./Fungily%20NFTs%20Launchpad/README.md)
-- [`Token Presale`](./Token%20Presale/README.md)
-- [`Token Swap`](./Token%20Swap/README.md)
-- [`NFT Swap`](./NFT%20Swap/README.md)
-- [`Marketplace`](./Marketplace/README.md)
+- [`Fungily NFTs Launchpad`](https://fungily.gitbook.io/fungily/fungily-nft/launchpad-presale)
+- [`Token Presale`](https://fungily.gitbook.io/fungily/fungily-token/token-presale)
+- [`Token Swap`](https://fungily.gitbook.io/fungily/fungily-token/token-swap)
+- [`NFT Swap`](https://fungily.gitbook.io/fungily/fungily-nft/liquidnfts)
+- [`Marketplace`](https://fungily.gitbook.io/fungily/fungily-nft/marketplace)
 
 ---
 
-## 🧪 Local Development
 
 ```bash
 # Clone the repo
@@ -53,19 +52,18 @@ git clone https://github.com/fungilyxyz/Fungily-sc.git
 # Navigate and start building
 cd Fungily-sc
 
-Installation
+# Installation
 
-```bash
+
 forge install
 
-```
-Compile contracts
-```bash
+# Compile contracts
+
 forge build
 
-```
-Forge test
-```bash
+
+# Forge test
+
 forge test
 
 ```
