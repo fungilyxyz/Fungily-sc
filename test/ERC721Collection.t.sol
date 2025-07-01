@@ -2,21 +2,19 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FungilyDrop} from "../src/Fungily NFTs Launchpad/ERC721Collection.sol";
-import {IERC721Collection} from "../src/Fungily NFTs Launchpad/IERC721Collection.sol";
+import {FungilyDrop} from "../src/Fungily-NFTs-Launchpad/ERC721Collection.sol";
+import {IERC721Collection} from "../src/Fungily-NFTs-Launchpad/IERC721Collection.sol";
 
 contract ERC721CollectionTest is Test {
     FungilyDrop public collection;
+    FungilyDrop public collection2;
     address creator = address(123);
     bool lockedTillMintOut = true;
     uint256 public singleMintCost = 110;
     uint256 publicMintLimit = 2;
     uint256 salePrice = 200;
-    IERC721Collection.Platform platform = IERC721Collection.Platform({
-        salesFeeBps: 10_00, // 10% of sales fee
-        feeReceipient: address(234), // fee receipient
-        mintFee: 10
-    });
+    IERC721Collection.Platform platform =
+        IERC721Collection.Platform({salesFeeBps: 10_00, feeReceipient: address(234), mintFee: 10});
 
     bytes32[] proof = [
         bytes32(0xad67874866783b4129c60d23995daac0c837c320b38a19d1915e7fa4586bcefc),
@@ -25,6 +23,9 @@ contract ERC721CollectionTest is Test {
 
     IERC721Collection.PublicMint public publicMintConfig =
         IERC721Collection.PublicMint({maxPerWallet: 2, startTime: 0, endTime: 100, price: 100});
+
+    IERC721Collection.PublicMint public publicMintConfig2 =
+        IERC721Collection.PublicMint({maxPerWallet: 0, startTime: 0, endTime: 100, price: 100});
 
     IERC721Collection.PresalePhaseIn public presalePhaseConfig1 = IERC721Collection.PresalePhaseIn({
         maxPerAddress: 2,
@@ -55,15 +56,16 @@ contract ERC721CollectionTest is Test {
         symbol: "TST",
         baseURI: "https://example.com/",
         royaltyFeeBps: 500,
-        liquidityNftBps: 500,
+        liquidityNftBps: 1000,
         liquidityTokenBps: 500
     });
 
     function setUp() public {
         collection = new FungilyDrop(collectionConfig1, publicMintConfig, platform);
+        collection2 = new FungilyDrop(collectionConfig1, publicMintConfig2, platform);
     }
 
-    function _getOldData(address _minter)
+    function _getOldData(address _minter, FungilyDrop _collection)
         internal
         view
         returns (
@@ -73,8 +75,8 @@ contract ERC721CollectionTest is Test {
             uint256 previousTotalMinted
         )
     {
-        previousMinterNftBal = collection.balanceOf(address(_minter));
-        previousTotalMinted = collection.totalMinted();
+        previousMinterNftBal = _collection.balanceOf(address(_minter));
+        previousTotalMinted = _collection.totalMinted();
         previousCreatorEthBal = creator.balance;
         previousPlatformEthBal = platform.feeReceipient.balance;
         console.log("Creator previous balance: ", previousCreatorEthBal);
@@ -87,18 +89,19 @@ contract ERC721CollectionTest is Test {
         uint256 _amount,
         uint256 _prevCreatorEthBal,
         uint256 _prevPlatformEthBal,
-        uint256 _prevTotalMinted
+        uint256 _prevTotalMinted,
+        FungilyDrop _collection
     ) internal view {
-        uint256 newMinterNftBal = collection.balanceOf(_minter);
+        uint256 newMinterNftBal = _collection.balanceOf(_minter);
         uint256 newCreatorEthBal = _prevCreatorEthBal
-            + collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.CREATOR);
+            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.CREATOR);
         uint256 newPlatformEthBal = _prevPlatformEthBal
-            + collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.PLATFORM);
+            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.PLATFORM);
 
         console.log("Creator new balance: ", newCreatorEthBal);
         console.log("Platform new balance: ", newPlatformEthBal);
         assertEq(newMinterNftBal, _prevMinterNftBal + _amount);
-        assertEq(collection.totalMinted(), _prevTotalMinted + _amount);
+        assertEq(_collection.totalMinted(), _prevTotalMinted + _amount);
         assertEq(creator.balance, newCreatorEthBal);
         assertEq(platform.feeReceipient.balance, newPlatformEthBal);
     }
@@ -116,10 +119,16 @@ contract ERC721CollectionTest is Test {
             uint256 previousCreatorEthBal,
             uint256 previousPlatformEthBal,
             uint256 previousTotalMinted
-        ) = _getOldData(minter);
+        ) = _getOldData(minter, collection);
         _mintPublic(collection, minter, 1, singleMintCost);
         _verifyOldDataWithNew(
-            minter, previousMinterNftBal, 1, previousCreatorEthBal, previousPlatformEthBal, previousTotalMinted
+            minter,
+            previousMinterNftBal,
+            1,
+            previousCreatorEthBal,
+            previousPlatformEthBal,
+            previousTotalMinted,
+            collection
         );
     }
 
@@ -138,10 +147,16 @@ contract ERC721CollectionTest is Test {
             uint256 previousCreatorEthBal,
             uint256 previousPlatformEthBal,
             uint256 previousTotalMinted
-        ) = _getOldData(minter);
+        ) = _getOldData(minter, collection);
         _mintPublic(collection, minter, 2, singleMintCost * 2);
         _verifyOldDataWithNew(
-            minter, previousMinterNftBal, 2, previousCreatorEthBal, previousPlatformEthBal, previousTotalMinted
+            minter,
+            previousMinterNftBal,
+            2,
+            previousCreatorEthBal,
+            previousPlatformEthBal,
+            previousTotalMinted,
+            collection
         );
     }
 
@@ -372,5 +387,34 @@ contract ERC721CollectionTest is Test {
         deal(minter, 300);
         vm.expectRevert();
         _mintWhitelist(minter, 2, 1, 120);
+    }
+
+    function _testNoMintLimit(uint256 amount) internal {
+        address minter = address(456);
+        deal(minter, 1 ether);
+        (
+            uint256 previousMinterNftBal,
+            uint256 previousCreatorEthBal,
+            uint256 previousPlatformEthBal,
+            uint256 previousTotalMinted
+        ) = _getOldData(minter, collection2);
+        _mintPublic(collection2, minter, amount, singleMintCost * amount);
+        _verifyOldDataWithNew(
+            minter,
+            previousMinterNftBal,
+            amount,
+            previousCreatorEthBal,
+            previousPlatformEthBal,
+            previousTotalMinted,
+            collection2
+        );
+    }
+
+    function testSupplyAdjustmentAfterSaleEnd() public {
+        _testNoMintLimit(60);
+        vm.prank(creator);
+        collection2.endSale();
+        assertEq(collection2.getMintableSupply(), 60);
+        assertEq(collection2.maxSupply(), 66);
     }
 }
