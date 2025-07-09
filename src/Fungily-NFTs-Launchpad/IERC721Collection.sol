@@ -80,9 +80,6 @@ interface IERC721Collection {
     /// @dev Thrown when a user does not send enough ether to mint an amount of NFTs
     error InsufficientFunds(uint256 _cost);
 
-    /// @dev Thrown when a user tries to mint after collection has bee sold out
-    error SoldOut(uint256 maxSupply);
-
     /// @dev Thrown when a user tries to mint from a phase that is not in the mint configuration
     error InvalidPhase(uint8 _phaseId);
 
@@ -104,6 +101,12 @@ interface IERC721Collection {
 
     /// @dev Thrown when set liquidity supply is less than 1 NFT.
     error InvalidLiquiditySupply(uint256 liquidityNftBps);
+
+    /// @dev Thrown when a user tries to mint an amount of NFTs that exceeds the maximum allowed.
+    /// @param _amount is the amount of NFTs to be minted.
+    /// @param _absMaxSupply is the absolute maximum supply of the collection i.e part of the supply that is 
+    /// externally mintable by users.
+    error CannotMintAmount(uint256 _amount, uint _absMaxSupply);
 
     /// @dev Thrown wheneve a mint is attempted on an inactive phase
     error PhaseInactive();
