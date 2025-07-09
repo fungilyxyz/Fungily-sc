@@ -248,7 +248,7 @@ contract ERC721CollectionTest is Test {
         deal(minter, 350);
         uint256 _startTime = collection.getPresaleConfig()[0].startTime;
         skip(_startTime);
-        _mintWhitelist(minter, 1, 0, 70);
+        _mintWhitelist(minter, 1, 1, 70);
     }
 
     function testWhitelistMintMultiple() public {
@@ -259,7 +259,7 @@ contract ERC721CollectionTest is Test {
         deal(minter, 350);
         uint256 _startTime = collection.getPresaleConfig()[0].startTime;
         skip(_startTime);
-        _mintWhitelist(minter, 2, 0, 120);
+        _mintWhitelist(minter, 2, 1, 120);
     }
 
     function testRevertNonWhitelistedMinter() public {
@@ -319,10 +319,10 @@ contract ERC721CollectionTest is Test {
         collection.addPresalePhase(presalePhaseConfig1);
         collection.addPresalePhase(presalePhaseConfig1);
         assertEq(collection.getPresaleConfig().length, 2);
-        collection.editPresalePhaseConfig(1, presalePhaseConfig2);
+        collection.editPresalePhaseConfig(2, presalePhaseConfig2);
         assertEq(collection.getPresaleConfig()[1].name, "Test Phase 2");
         vm.warp(0);
-        collection.removePresalePhase(1);
+        collection.removePresalePhase(2);
         assertEq(collection.getPresaleConfig().length, 1);
         assertEq(collection.getPresaleConfig()[0].name, "Test Phase");
         vm.stopPrank();
