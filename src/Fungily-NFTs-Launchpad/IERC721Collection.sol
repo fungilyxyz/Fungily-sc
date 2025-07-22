@@ -15,7 +15,6 @@ interface IERC721Collection {
 
     ///@dev Collection details
     struct Collection {
-        bool tradingLocked;
         bool revealed;
         uint16 royaltyFeeBps;
         uint16 liquidityNftBps; // Percentage of NFT to set aside for liquidity supply in the AMM
@@ -89,12 +88,8 @@ interface IERC721Collection {
     /// @dev Thrown when creator tries to add more presale phase than permitted.
     error MaxPresaleLimitReached(uint8 _maxLimit);
 
-    /**
-     * @dev Thrown when creator tries to reduce supply to an amount that's either;
-     * - less than the total minted tokens or less than the total supply.
-     * - greater than initially set max supply.
-     */
-    error InvalidSupplyConfig();
+    /// @dev Thrown when user tries to claim reserved NFTs but there are no reserved NFTs for the user.
+    error NoReservedNfts();
 
     /// @dev Thrown whenever a purchase is attempted and fails.
     error PurchaseFailed();
@@ -104,9 +99,9 @@ interface IERC721Collection {
 
     /// @dev Thrown when a user tries to mint an amount of NFTs that exceeds the maximum allowed.
     /// @param _amount is the amount of NFTs to be minted.
-    /// @param _absMaxSupply is the absolute maximum supply of the collection i.e part of the supply that is 
+    /// @param _absMaxSupply is the absolute maximum supply of the collection i.e part of the supply that is
     /// externally mintable by users.
-    error CannotMintAmount(uint256 _amount, uint _absMaxSupply);
+    error CannotMintAmount(uint256 _amount, uint256 _absMaxSupply);
 
     /// @dev Thrown wheneve a mint is attempted on an inactive phase
     error PhaseInactive();
@@ -195,23 +190,6 @@ interface IERC721Collection {
      * @dev Returns an array containing details for each presale phase
      */
     function getPresaleConfig() external view returns (PresalePhase[] memory);
-
-    /**
-     * @dev Allows creator to airdrop NFTs to an account
-     * @param _to is the address of the receipeient
-     * @param _amount is the amount of NFTs to be airdropped
-     * Ensures amount of tokens to be minted does not exceed MAX_SUPPLY
-     */
-    function airdrop(address _to, uint256 _amount) external;
-
-    /**
-     * @dev Allows the creator to airdrop NFT to multiple addresses at once.
-     * @param _receipients is the list of accounts to mint NFT for.
-     * @param _amountPerAddress is the amount of tokens to be minted per addresses.
-     * Ensures total amount of NFT to be minted does not exceed MAX_SUPPLY.
-     *
-     */
-    function batchAirdrop(address[] calldata _receipients, uint256 _amountPerAddress) external;
 
     /**
      * @dev Check the whitelist status of an account based on merkle proof.
