@@ -46,7 +46,6 @@ contract ERC721CollectionTest is Test {
     });
 
     IERC721Collection.Collection collectionConfig1 = IERC721Collection.Collection({
-        tradingLocked: true,
         revealed: false,
         maxSupply: 100,
         owner: creator,
@@ -195,26 +194,6 @@ contract ERC721CollectionTest is Test {
         vm.stopPrank();
     }
 
-    function testAirdrop() public {
-        vm.prank(creator);
-        collection.airdrop(address(234), 3);
-        assertEq(collection.balanceOf(address(234)), 3);
-        assertEq(collection.totalMinted(), 3);
-    }
-
-    function test_batchAirdrop() public {
-        address[] memory addresses = new address[](3);
-        addresses[0] = address(234);
-        addresses[1] = address(345);
-        addresses[2] = address(456);
-        vm.prank(creator);
-        collection.batchAirdrop(addresses, 1);
-        assertEq(collection.balanceOf(address(234)), 1);
-        assertEq(collection.balanceOf(address(345)), 1);
-        assertEq(collection.balanceOf(address(456)), 1);
-        assertEq(collection.totalMinted(), 3);
-    }
-
     function testRevert_MintWhilePaused() public {
         address minter = address(567);
         vm.prank(creator);
@@ -319,8 +298,6 @@ contract ERC721CollectionTest is Test {
         collection.addPresalePhase(presalePhaseConfig1);
         collection.addPresalePhase(presalePhaseConfig1);
         assertEq(collection.getPresaleConfig().length, 2);
-        collection.editPresalePhaseConfig(2, presalePhaseConfig2);
-        assertEq(collection.getPresaleConfig()[1].name, "Test Phase 2");
         vm.warp(0);
         collection.removePresalePhase(2);
         assertEq(collection.getPresaleConfig().length, 1);
@@ -413,7 +390,7 @@ contract ERC721CollectionTest is Test {
     function testSupplyAdjustmentAfterSaleEnd() public {
         _testNoMintLimit(60);
         vm.prank(creator);
-        collection2.endSale();
+        collection2.finalizeSale();
         assertEq(collection2.getMintableSupply(), 60);
         assertEq(collection2.maxSupply(), 66);
     }
