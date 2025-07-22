@@ -27,6 +27,7 @@ import {ERC721URIStorage} from "@openzeppelin/token/ERC721/extensions/ERC721URIS
 /**
  * @title Fungily Liquid NFT Launchpad.
  * @author (s) 0xstacker
+ *
  */
 contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IERC2981 {
     // Maximum number of presale phases that can be added.
@@ -46,7 +47,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     /**
      * @dev Basis point for percentage operations
-     *  100bps = 1% 
+     *  100bps = 1%
      */
     uint16 BASIS_POINT = 10_000;
 
@@ -75,7 +76,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     bool public paused;
 
     // If set to true, prevents trading of tokens until minting is complete.
-    bool public tradingLocked;
+    bool public tradingLocked = true;
 
     /**
      * Set to false to conceal token URIs.
@@ -117,7 +118,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
      * Presale mint phases.
      * Maximum of 5 presale phases.
      */
-
     PresalePhase[] public phaseData;
     mapping(uint8 => PresalePhase) internal mintPhases;
 
@@ -152,7 +152,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         }
         baseURI = _collection.baseURI;
         royaltyFeeBps = _collection.royaltyFeeBps;
-        tradingLocked = _collection.tradingLocked;
         liquidityNftBps = _collection.liquidityNftBps;
         liquidityTokenBps = _collection.liquidityTokenBps;
         // Configure platform
@@ -171,7 +170,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     ///////////////////////// MODIFIERS ////////////////////////////////////
 
-
     // Allows owner to pause minting at any phase.
     modifier isPaused() {
         if (paused) {
@@ -179,7 +177,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         }
         _;
     }
-
 
     /**
      * @dev Control token trading
@@ -197,15 +194,11 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     mapping(address => uint256 amount) private reservedMints;
 
     /// @dev see {IERC721Collection-mintPublic}
-    function mintPublic(uint256 _amount, address _to)
-        external
-        payable
-        nonReentrant
-    {   
-        if( _exceedsMintLimit(MintPhase.PUBLIC, _to, _amount, PUBLIC_MINT_PHASE_ID)){
+    function mintPublic(uint256 _amount, address _to) external payable nonReentrant {
+        if (_exceedsMintLimit(MintPhase.PUBLIC, _to, _amount, PUBLIC_MINT_PHASE_ID)) {
             revert PhaseLimitExceeded(_publicMint.maxPerWallet);
         }
-        
+
         if (!_canMint(_amount)) {
             revert CannotMintAmount(_amount, absMaxSupply);
         }
@@ -220,7 +213,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
             revert InsufficientFunds(totalCost);
         }
         reservedMints[_to] += _amount;
-        
+
         _mintNft(_to, _amount);
         _payout(MintPhase.PUBLIC, _amount, PUBLIC_MINT_PHASE_ID);
         emit Purchase(_to, _amount);
@@ -230,16 +223,12 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
      *
      * @dev see {IERC721Collection-whitelistMint}
      */
-    function whitelistMint(bytes32[] memory _proof, uint8 _amount, uint8 _phaseId)
-        external
-        payable
-        nonReentrant
-    {
+    function whitelistMint(bytes32[] memory _proof, uint8 _amount, uint8 _phaseId) external payable nonReentrant {
         if (!phaseCheck[_phaseId]) {
             revert InvalidPhase(_phaseId);
         }
 
-        if (_exceedsMintLimit(MintPhase.PRESALE, _msgSender(), _amount, _phaseId)){
+        if (_exceedsMintLimit(MintPhase.PRESALE, _msgSender(), _amount, _phaseId)) {
             revert PhaseLimitExceeded(mintPhases[_phaseId].maxPerAddress);
         }
 
@@ -265,33 +254,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         _payout(MintPhase.PRESALE, _amount, _phaseId);
     }
 
-    /////////////////////// ADMIN/CREATOR MINTING FUNCTIONS /////////////////////////
-
-    /// @dev see {IERC721Collection-airdrop}
-    function airdrop(address _to, uint256 _amount) external onlyOwner {
-        if (!_canMint(_amount)) {
-            revert CannotMintAmount(_amount, absMaxSupply);
-        }
-        _mintNft(_to, _amount);
-        emit Airdrop(_to, _amount);
-    }
-
-    ///@dev see {IERC721Collection-batchAirdrop}
-    function batchAirdrop(address[] calldata _receipients, uint256 _amountPerAddress) external onlyOwner {
-        if (_receipients.length > BATCH_MINT_LIMIT) {
-            revert AmountTooHigh();
-        }
-
-        uint256 totalAmount = _amountPerAddress * _receipients.length;
-        if (!_canMint(totalAmount)) {
-            revert CannotMintAmount(totalAmount, absMaxSupply);
-        }
-        for (uint256 i; i < _receipients.length; i++) {
-            _mintNft(_receipients[i], _amountPerAddress);
-        }
-        emit BatchAirdrop(_receipients, _amountPerAddress);
-    }
-
     //////////////////////////// PRESALE CONTROL /////////////////////////////////////
 
     /// @dev see {IERC721Collection-addPresalePhase}
@@ -299,7 +261,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         if (existingPhases == MAX_PRESALE_LIMIT) {
             revert MaxPresaleLimitReached(MAX_PRESALE_LIMIT);
         }
-        phaseIds ++;
+        phaseIds++;
 
         PresalePhase memory phase = PresalePhase({
             name: _phase.name,
@@ -314,38 +276,8 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         mintPhases[phaseIds] = phase;
         phaseData.push(phase);
         phaseCheck[phase.phaseId] = true;
-        existingPhases ++;
+        existingPhases++;
         emit AddPresalePhase(_phase.name, phase.phaseId);
-    }
-
-    /**
-     * @dev Change the configuration for an existing presale phase.
-     * @param _phaseId is the phase to change config.
-     * @param _newConfig is the configuration of the new phase.
-     */
-    function editPresalePhaseConfig(uint8 _phaseId, PresalePhaseIn memory _newConfig)
-        external
-        onlyOwner
-    {
-        _verifyPhaseId(_phaseId);
-        PresalePhase memory oldPhase = mintPhases[_phaseId];
-        PresalePhase memory newPhase = PresalePhase({
-            name: _newConfig.name,
-            startTime: block.timestamp + _newConfig.startTime,
-            endTime: block.timestamp + _newConfig.endTime,
-            maxPerAddress: _newConfig.maxPerAddress,
-            price: _newConfig.price,
-            merkleRoot: _newConfig.merkleRoot,
-            phaseId: _phaseId
-        });
-
-        if (phaseCheck[_phaseId]) {
-            mintPhases[_phaseId] = newPhase;
-            phaseData[_phaseId - 1] = newPhase; 
-        } else {
-            revert  InvalidPhase(_phaseId);
-        }
-        emit EditPresaleConfig(oldPhase, newPhase);
     }
 
     /// @dev see {IERC721Collection-removePresalePhase}
@@ -355,8 +287,8 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         require(mintPhases[_phaseId].startTime > block.timestamp, "Phase Live");
         delete mintPhases[_phaseId];
         phaseCheck[_phaseId] = false;
-        phaseIds --;
-        existingPhases --;
+        phaseIds--;
+        existingPhases--;
         PresalePhase[] memory oldList = phaseData;
         uint256 totalItems = oldList.length;
         delete phaseData;
@@ -390,15 +322,19 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     // total minted * 100 / percentage mintable
 
-    function endSale() external onlyOwner {
+    function finalizeSale() external onlyOwner {
         // adjust supply if not minted out
         if (totalMinted() != absMaxSupply) {
             maxSupply = (totalMinted() * BASIS_POINT) / (BASIS_POINT - liquidityNftBps);
             _setLiquiditySupply(liquidityNftBps);
             // uint256 tokenLiquidityAmount = (address(this).balance * liquidityTokenBps) / BASIS_POINT;
+
+            // Liquidity NFTs would be minted at this level
             _deployLiquidity();
+            withdraw();
         } else {
             _deployLiquidity();
+            withdraw();
         }
     }
 
@@ -406,27 +342,25 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     function _deployLiquidity() internal {
         /**
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * Liquidity Deployment
-         * 
-         * 
-         * 
-         * 
+         *
+         *
+         *
+         *
          */
     }
 
     // Withdraw funds from contract
-    function withdraw(uint256 _amount) external onlyOwner nonReentrant {
-        if (address(this).balance < _amount) {
-            revert InsufficientFunds(_amount);
-        }
-        (bool success,) = payable(owner()).call{value: _amount}("");
+    function withdraw() internal onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool success,) = payable(owner()).call{value: balance}("");
         if (!success) {
             revert WithdrawalFailed();
         }
-        emit WithdrawFunds(_amount);
+        emit WithdrawFunds(balance);
     }
 
     /**
@@ -457,7 +391,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     }
 
     /// @dev see {ERC721-_burn}
-    function burn(uint256 _tokenId) external{
+    function burn(uint256 _tokenId) external {
         if (ownerOf(_tokenId) != _msgSenderERC721A()) {
             revert NotOwner(_tokenId);
         }
@@ -558,16 +492,16 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     /// @return totalMinted as the total number of tokens that have been minted
     function totalMinted() public view returns (uint256) {
-        return  _totalMinted();
+        return _totalMinted();
     }
 
     /// @return totalBurned as the total number of tokens that have been burned
-    function totalBurned() public view returns (uint256 ) {
+    function totalBurned() public view returns (uint256) {
         return _totalBurned();
     }
 
     ///////////////////////////////// TRANSFER CONTROL ////////////////////////////////////
-    
+
     /// @dev see {ERC721A-safeTransferFrom}
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data)
         public
@@ -599,19 +533,21 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
 
     /////////////////////////////////////// INTERNALS ////////////////////////////////////////////////
 
-        /**
+    /**
      * @dev Enforce phase minting limit per address.
      * @notice A limit of 0 means no mint restrictions.
      */
-    function _exceedsMintLimit(MintPhase _phase, address _to, uint256 _amount, uint8 _phaseId) internal view returns(bool limit){
+    function _exceedsMintLimit(MintPhase _phase, address _to, uint256 _amount, uint8 _phaseId)
+        internal
+        view
+        returns (bool limit)
+    {
         if (_phase == MintPhase.PUBLIC) {
             uint8 publicMintLimit = _publicMint.maxPerWallet;
             limit = balanceOf(_to) + _amount > publicMintLimit && publicMintLimit != 0 ? true : false;
-                
         } else {
             uint8 phaseLimit = mintPhases[_phaseId].maxPerAddress;
             limit = balanceOf(_to) + _amount > phaseLimit && phaseLimit != 0 ? true : false;
-        
         }
     }
 
@@ -623,14 +559,13 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     }
 
     // Block minting unless phase is active
-    function _phaseActive(MintPhase _phase, uint8 _phaseId) internal view returns (bool active){
+    function _phaseActive(MintPhase _phase, uint8 _phaseId) internal view returns (bool active) {
         if (_phase == MintPhase.PUBLIC) {
             active = _publicMint.startTime >= block.timestamp || block.timestamp > _publicMint.endTime ? false : true;
-                
         } else {
             uint256 phaseStartTime = mintPhases[_phaseId].startTime;
             uint256 phaseEndTime = mintPhases[_phaseId].endTime;
-            active = phaseStartTime >= block.timestamp || block.timestamp > phaseEndTime ? false : true; 
+            active = phaseStartTime >= block.timestamp || block.timestamp > phaseEndTime ? false : true;
         }
     }
 
