@@ -70,6 +70,8 @@ interface IERC721Collection {
         bytes32 merkleRoot;
     }
 
+    ///////////////// Errors /////////////////
+
     /// @dev Thrown when a user is not whitelisted for a presale phase
     error NotWhitelisted(address _address);
 
@@ -130,6 +132,11 @@ interface IERC721Collection {
     /// @dev Thrown when action is attempted on zero address
     error ZeroAddress();
 
+    /// @dev Thrown when liquidity deployment fails.
+    error LiquidityDeploymentFailed();
+
+    ////////////// Events //////////////
+
     /// @dev Emitted after adding a new presale phase to the collection.
     event AddPresalePhase(string _phaseName, uint8 _phaseId);
 
@@ -162,6 +169,9 @@ interface IERC721Collection {
 
     /// @dev Emitted when creator removes a presale phase.
     event RemovePresalePhase(uint8 _phaseId, string _name);
+
+    /// @dev Emitted when liquidity is deployed.
+    event LiquidityDeployed(address indexed _pool, uint256 _liquidityNftSupply, uint256 _tokenLiquidityAmount);
 
     /**
      * @dev Public minting function.

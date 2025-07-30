@@ -92,16 +92,12 @@ contract ERC721CollectionTest is Test {
         FungilyDrop _collection
     ) internal view {
         uint256 newMinterNftBal = _collection.balanceOf(_minter);
-        uint256 newCreatorEthBal = _prevCreatorEthBal
-            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.CREATOR);
         uint256 newPlatformEthBal = _prevPlatformEthBal
-            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0, IERC721Collection.Payees.PLATFORM);
-
-        console.log("Creator new balance: ", newCreatorEthBal);
+            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0);
         console.log("Platform new balance: ", newPlatformEthBal);
         assertEq(newMinterNftBal, _prevMinterNftBal + _amount);
         assertEq(_collection.totalMinted(), _prevTotalMinted + _amount);
-        assertEq(creator.balance, newCreatorEthBal);
+        assertEq(creator.balance, _prevCreatorEthBal);
         assertEq(platform.feeReceipient.balance, newPlatformEthBal);
     }
 
@@ -390,8 +386,10 @@ contract ERC721CollectionTest is Test {
     function testSupplyAdjustmentAfterSaleEnd() public {
         _testNoMintLimit(60);
         vm.prank(creator);
-        collection2.finalizeSale();
+        collection2.finalizeSale(address(999));
         assertEq(collection2.getMintableSupply(), 60);
         assertEq(collection2.maxSupply(), 66);
+        assertEq(collection2.balanceOf(address(999)), 6);
+        console.log(address(collection2).balance);
     }
 }

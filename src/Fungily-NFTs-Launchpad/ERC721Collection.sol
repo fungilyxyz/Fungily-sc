@@ -212,7 +212,6 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         if (msg.value < totalCost) {
             revert InsufficientFunds(totalCost);
         }
-        reservedMints[_to] += _amount;
 
         _mintNft(_to, _amount);
         _payout(MintPhase.PUBLIC, _amount, PUBLIC_MINT_PHASE_ID);
@@ -321,36 +320,39 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     ///////////////////////// SUPPLY CONTROL //////////////////////////////
 
     // total minted * 100 / percentage mintable
+    // mints and sends nfts to a temporary vault address provided by creator for testing purposes.
 
-    function finalizeSale() external onlyOwner {
+    function finalizeSale(address _pool) external onlyOwner {
+        uint256 tokenLiquidityAmount = (address(this).balance * liquidityTokenBps) / BASIS_POINT;
         // adjust supply if not minted out
         if (totalMinted() != absMaxSupply) {
             maxSupply = (totalMinted() * BASIS_POINT) / (BASIS_POINT - liquidityNftBps);
             _setLiquiditySupply(liquidityNftBps);
-            // uint256 tokenLiquidityAmount = (address(this).balance * liquidityTokenBps) / BASIS_POINT;
-
             // Liquidity NFTs would be minted at this level
-            _deployLiquidity();
+            _deployLiquidity(payable(_pool), liquidityNftQuantity, tokenLiquidityAmount);
+            unlockTrading();
             withdraw();
         } else {
-            _deployLiquidity();
+            _deployLiquidity(payable(_pool), liquidityNftQuantity, tokenLiquidityAmount);
+            unlockTrading();
             withdraw();
         }
     }
 
     ////////////////////////////////////////////////////////////////////////
 
-    function _deployLiquidity() internal {
-        /**
-         *
-         *
-         *
-         * Liquidity Deployment
-         *
-         *
-         *
-         *
-         */
+    function _deployLiquidity(address payable _pool, uint256 _liquidityNftSupply, uint256 _tokenLiquidityAmount)
+        internal
+    {
+        if (_pool == address(0)) {
+            revert ZeroAddress();
+        }
+        _mintNft(_pool, _liquidityNftSupply);
+        (bool success,) = _pool.call{value: _tokenLiquidityAmount}("");
+        if (!success) {
+            revert LiquidityDeploymentFailed();
+        }
+        emit LiquidityDeployed(_pool, _liquidityNftSupply, _tokenLiquidityAmount);
     }
 
     // Withdraw funds from contract
@@ -380,7 +382,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     }
 
     /// @notice Allows creator to permit trading of nfts on secondary marketplaces.
-    function unlockTrading() external onlyOwner {
+    function unlockTrading() public onlyOwner {
         tradingLocked = false;
     }
 
@@ -443,39 +445,26 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
      * @param _phase is the mint phase of the token || Public or Presale.
      * @param _amount is the amount of tokens minted.
      * @param _phaseId is the phase id of the mint phase if it was minted on presale
-     * @param _payee The party to be paid || Platform or Creator.
      * @return share as the share of the platform or creator from the amount of token minted.
      * @notice The Platform share is calculated as the sum of mint fee for the amount of tokens minted and sales fee on each token.
+     ==========
      */
-    function computeShare(MintPhase _phase, uint256 _amount, uint8 _phaseId, Payees _payee)
+    function computeShare(MintPhase _phase, uint256 _amount, uint8 _phaseId)
         public
         view
         returns (uint256 share)
     {
-        if (_payee == Payees.PLATFORM) {
-            if (_phase == MintPhase.PUBLIC) {
-                uint256 _mintFee = mintFee * _amount;
-                uint256 value = _publicMint.price * _amount;
-                uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
-                share = _mintFee + _salesFee;
-            } else {
-                uint256 _mintFee = mintFee * _amount;
-                uint256 _price = mintPhases[_phaseId].price;
-                uint256 value = _price * _amount;
-                uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
-                share = _mintFee + _salesFee;
-            }
+        if (_phase == MintPhase.PUBLIC) {
+            uint256 _mintFee = mintFee * _amount;
+            uint256 value = _publicMint.price * _amount;
+            uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
+            share = _mintFee + _salesFee;
         } else {
-            if (_phase == MintPhase.PUBLIC) {
-                uint256 value = _publicMint.price * _amount;
-                uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
-                share = value - _salesFee;
-            } else {
-                uint256 _price = mintPhases[_phaseId].price;
-                uint256 value = _price * _amount;
-                uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
-                share = value - _salesFee;
-            }
+            uint256 _mintFee = mintFee * _amount;
+            uint256 _price = mintPhases[_phaseId].price;
+            uint256 value = _price * _amount;
+            uint256 _salesFee = (value * SALES_FEE_BPS) / BASIS_POINT;
+            share = _mintFee + _salesFee;
         }
     }
 
@@ -626,14 +615,9 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
      */
     function _payout(MintPhase _phase, uint256 _amount, uint8 _phaseId) internal {
         address platform = PLATFORM_FEE_RECEIPIENT;
-        uint256 platformShare = computeShare(_phase, _amount, 0, Payees.PLATFORM);
-        uint256 creatorShare = computeShare(_phase, _amount, _phaseId, Payees.CREATOR);
+        uint256 platformShare = computeShare(_phase, _amount, _phaseId);
         (bool payPlatform,) = payable(platform).call{value: platformShare}("");
         if (!payPlatform) {
-            revert PurchaseFailed();
-        }
-        (bool payCreator,) = payable(proceedCollector).call{value: creatorShare}("");
-        if (!payCreator) {
             revert PurchaseFailed();
         }
     }
