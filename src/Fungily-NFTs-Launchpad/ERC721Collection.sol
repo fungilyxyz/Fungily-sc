@@ -27,7 +27,7 @@ import {ERC721URIStorage} from "@openzeppelin/token/ERC721/extensions/ERC721URIS
 /**
  * @title Fungily Liquid NFT Launchpad.
  * @author (s) 0xstacker
- *
+ * @notice This contract is still under development and has been optimized for quick deployment only.
  */
 contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IERC2981 {
     // Maximum number of presale phases that can be added.

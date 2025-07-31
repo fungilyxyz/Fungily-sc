@@ -4,6 +4,7 @@ pragma solidity 0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {FungilyCollectionFactory} from "../src/Fungily-NFTs-Launchpad/Fungily.sol";
 
+///@dev test deployment script. replace values as needed
 contract Deploy is Script {
     function run() public {
         address initialFeeReceiver = 0x7cC8F5d78acfaa517eA62C5C579241eD9E1D190b; // Replace with actual address
@@ -15,7 +16,5 @@ contract Deploy is Script {
             new FungilyCollectionFactory(initialFeeReceiver, initialPlatformMintFee, initialPlatformSalesFeeBps);
 
         vm.stopBroadcast();
-
-        // Additional setup or configuration can be done here if needed
     }
 }
