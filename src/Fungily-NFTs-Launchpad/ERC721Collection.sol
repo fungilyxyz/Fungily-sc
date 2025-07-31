@@ -158,6 +158,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         if (_platform.feeReceipient == address(0)) {
             revert ZeroAddress();
         }
+
         SALES_FEE_BPS = _platform.salesFeeBps;
         PLATFORM_FEE_RECEIPIENT = _platform.feeReceipient;
         mintFee = _platform.mintFee;
@@ -447,13 +448,9 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
      * @param _phaseId is the phase id of the mint phase if it was minted on presale
      * @return share as the share of the platform or creator from the amount of token minted.
      * @notice The Platform share is calculated as the sum of mint fee for the amount of tokens minted and sales fee on each token.
-     ==========
+     *  ==========
      */
-    function computeShare(MintPhase _phase, uint256 _amount, uint8 _phaseId)
-        public
-        view
-        returns (uint256 share)
-    {
+    function computeShare(MintPhase _phase, uint256 _amount, uint8 _phaseId) public view returns (uint256 share) {
         if (_phase == MintPhase.PUBLIC) {
             uint256 _mintFee = mintFee * _amount;
             uint256 value = _publicMint.price * _amount;

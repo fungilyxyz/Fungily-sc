@@ -92,8 +92,8 @@ contract ERC721CollectionTest is Test {
         FungilyDrop _collection
     ) internal view {
         uint256 newMinterNftBal = _collection.balanceOf(_minter);
-        uint256 newPlatformEthBal = _prevPlatformEthBal
-            + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0);
+        uint256 newPlatformEthBal =
+            _prevPlatformEthBal + _collection.computeShare(IERC721Collection.MintPhase.PUBLIC, _amount, 0);
         console.log("Platform new balance: ", newPlatformEthBal);
         assertEq(newMinterNftBal, _prevMinterNftBal + _amount);
         assertEq(_collection.totalMinted(), _prevTotalMinted + _amount);
