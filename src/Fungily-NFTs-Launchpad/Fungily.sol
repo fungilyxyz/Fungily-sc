@@ -10,20 +10,15 @@ contract FungilyCollectionFactory {
     uint16 public platformSalesFeeBps;
     address public feeReceiver;
     address public admin;
-    uint256 public platformMintFee;
-
     /**
      * @dev Constructor to initialize the factory with platform details.
      * @notice This contract is responsible for creating new ERC721 collections.
      * @param _initialFeeReceiver The address that will receive platform fees.
-     * @param _initialPlatformMintFee The initial mint fee for the platform.
-     * @param _initialPlatformSalesFeeBps The initial sales fee in basis points for
      * @notice the admin is the deployer of the contract and can manage platform settings.
      */
-    constructor(address _initialFeeReceiver, uint256 _initialPlatformMintFee, uint16 _initialPlatformSalesFeeBps) {
+
+    constructor(address _initialFeeReceiver) {
         feeReceiver = _initialFeeReceiver;
-        platformMintFee = _initialPlatformMintFee;
-        platformSalesFeeBps = _initialPlatformSalesFeeBps;
         admin = msg.sender;
     }
 
@@ -44,12 +39,7 @@ contract FungilyCollectionFactory {
         IERC721Collection.Collection memory _collection,
         IERC721Collection.PublicMint memory _publicMint
     ) external {
-        IERC721Collection.Platform memory platform = IERC721Collection.Platform({
-            feeReceipient: feeReceiver,
-            mintFee: platformMintFee,
-            salesFeeBps: platformSalesFeeBps
-        });
-        FungilyDrop collection = new FungilyDrop(_collection, _publicMint, platform);
+        FungilyDrop collection = new FungilyDrop(_collection, _publicMint, feeReceiver);
 
         emit CollectionCreated(msg.sender, address(collection));
     }
@@ -61,13 +51,5 @@ contract FungilyCollectionFactory {
 
     function setAdmin(address _admin) external onlyAdmin {
         admin = _admin;
-    }
-
-    function setPlatformSalesFeBps(uint8 _newBps) external onlyAdmin {
-        platformSalesFeeBps = _newBps;
-    }
-
-    function setPlatformMintFee(uint256 _newFee) external onlyAdmin {
-        platformMintFee = _newFee;
     }
 }
