@@ -1,5 +1,5 @@
 # IERC721Collection
-[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/7747b2c98c7f286c31767f1054d8cd364f24a13f/src/Fungily-NFTs-Launchpad/IERC721Collection.sol)
+[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/87f757e4a1000c6a20733139de235f69e9558380/src/Fungily-NFTs-Launchpad/IERC721Collection.sol)
 
 
 ## Functions
@@ -363,25 +363,11 @@ struct Collection {
     uint16 royaltyFeeBps;
     uint16 liquidityNftBps;
     uint16 liquidityTokenBps;
+    address creator;
     uint64 maxSupply;
-    address owner;
-    address proceedCollector;
-    address royaltyReceipient;
     string name;
     string symbol;
     string baseURI;
-}
-```
-
-### Platform
-*Platform info.*
-
-
-```solidity
-struct Platform {
-    uint16 salesFeeBps;
-    address feeReceipient;
-    uint256 mintFee;
 }
 ```
 

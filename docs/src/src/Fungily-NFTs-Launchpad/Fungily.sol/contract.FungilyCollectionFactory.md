@@ -1,5 +1,5 @@
 # FungilyCollectionFactory
-[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/7747b2c98c7f286c31767f1054d8cd364f24a13f/src/Fungily-NFTs-Launchpad/Fungily.sol)
+[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/87f757e4a1000c6a20733139de235f69e9558380/src/Fungily-NFTs-Launchpad/Fungily.sol)
 
 This contract is still under development and has been optimized for quick deployment only.
 
@@ -26,13 +26,6 @@ address public admin;
 ```
 
 
-### platformMintFee
-
-```solidity
-uint256 public platformMintFee;
-```
-
-
 ## Functions
 ### constructor
 
@@ -44,15 +37,13 @@ the admin is the deployer of the contract and can manage platform settings.
 
 
 ```solidity
-constructor(address _initialFeeReceiver, uint256 _initialPlatformMintFee, uint16 _initialPlatformSalesFeeBps);
+constructor(address _initialFeeReceiver);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`_initialFeeReceiver`|`address`|The address that will receive platform fees.|
-|`_initialPlatformMintFee`|`uint256`|The initial mint fee for the platform.|
-|`_initialPlatformSalesFeeBps`|`uint16`|The initial sales fee in basis points for|
 
 
 ### onlyAdmin
@@ -95,20 +86,6 @@ function setFeeReceiver(address _feeReceiver) external onlyAdmin;
 
 ```solidity
 function setAdmin(address _admin) external onlyAdmin;
-```
-
-### setPlatformSalesFeBps
-
-
-```solidity
-function setPlatformSalesFeBps(uint8 _newBps) external onlyAdmin;
-```
-
-### setPlatformMintFee
-
-
-```solidity
-function setPlatformMintFee(uint256 _newFee) external onlyAdmin;
 ```
 
 ## Events
