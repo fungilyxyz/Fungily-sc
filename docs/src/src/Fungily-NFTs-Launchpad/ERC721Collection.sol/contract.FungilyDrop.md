@@ -1,11 +1,23 @@
 # FungilyDrop
-[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/7747b2c98c7f286c31767f1054d8cd364f24a13f/src/Fungily-NFTs-Launchpad/ERC721Collection.sol)
+[Git Source](https://github.com/fungilyxyz/Fungily-sc/blob/87f757e4a1000c6a20733139de235f69e9558380/src/Fungily-NFTs-Launchpad/ERC721Collection.sol)
 
 **Inherits:**
-ERC721A, [IERC721Collection](/src/Fungily-NFTs-Launchpad/IERC721Collection.sol/interface.IERC721Collection.md), Ownable, ReentrancyGuard, IERC2981
+Ownable, ERC721A, [IERC721Collection](/src/Fungily-NFTs-Launchpad/IERC721Collection.sol/interface.IERC721Collection.md), ReentrancyGuard
 
 **Author:**
 (s) 0xstacker
+
+$$$$$$$$\                            $$\ $$\                 $$\                                              $$\                                 $$\
+$$  _____|                           \__|$$ |                $$ |                                             $$ |                                $$ |
+$$ |   $$\   $$\ $$$$$$$\   $$$$$$\  $$\ $$ |$$\   $$\       $$ |      $$$$$$\  $$\   $$\ $$$$$$$\   $$$$$$$\ $$$$$$$\   $$$$$$\   $$$$$$\   $$$$$$$ |
+$$$$$\ $$ |  $$ |$$  __$$\ $$  __$$\ $$ |$$ |$$ |  $$ |      $$ |      \____$$\ $$ |  $$ |$$  __$$\ $$  _____|$$  __$$\ $$  __$$\  \____$$\ $$  __$$ |
+$$  __|$$ |  $$ |$$ |  $$ |$$ /  $$ |$$ |$$ |$$ |  $$ |      $$ |      $$$$$$$ |$$ |  $$ |$$ |  $$ |$$ /      $$ |  $$ |$$ /  $$ | $$$$$$$ |$$ /  $$ |
+$$ |   $$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |$$ |$$ |  $$ |      $$ |     $$  __$$ |$$ |  $$ |$$ |  $$ |$$ |      $$ |  $$ |$$ |  $$ |$$  __$$ |$$ |  $$ |
+$$ |   \$$$$$$  |$$ |  $$ |\$$$$$$$ |$$ |$$ |\$$$$$$$ |      $$$$$$$$\\$$$$$$$ |\$$$$$$  |$$ |  $$ |\$$$$$$$\ $$ |  $$ |$$$$$$$  |\$$$$$$$ |\$$$$$$$ |
+\__|    \______/ \__|  \__| \____$$ |\__|\__| \____$$ |      \________|\_______| \______/ \__|  \__| \_______|\__|  \__|$$  ____/  \_______| \_______|
+$$\   $$ |        $$\   $$ |                                                                 $$ |
+\$$$$$$  |        \$$$$$$  |                                                                 $$ |
+\______/          \______/                                                                  \__|
 
 This contract is still under development and has been optimized for quick deployment only.
 
@@ -73,7 +85,7 @@ uint16 constant MAX_LIQUIDITY_BPS = 5000;
 ### SALES_FEE_BPS
 
 ```solidity
-uint16 internal immutable SALES_FEE_BPS;
+uint16 internal constant SALES_FEE_BPS = 500;
 ```
 
 
@@ -167,7 +179,7 @@ string public baseURI;
 ### mintFee
 
 ```solidity
-uint256 public immutable mintFee;
+uint256 public constant mintFee = 10;
 ```
 
 
@@ -239,10 +251,10 @@ mapping(address => uint256 amount) private reservedMints;
 
 
 ```solidity
-constructor(Collection memory _collection, PublicMint memory _publicMintConfig, Platform memory _platform)
+constructor(Collection memory _collection, PublicMint memory _publicMintConfig, address _platformFeeReceipient)
     ERC721A(_collection.name, _collection.symbol)
     ReentrancyGuard()
-    Ownable(_collection.owner);
+    Ownable(_collection.creator);
 ```
 **Parameters**
 
@@ -250,7 +262,7 @@ constructor(Collection memory _collection, PublicMint memory _publicMintConfig, 
 |----|----|-----------|
 |`_collection`|`Collection`|holds all collection related data. see {IERC721Collection-Collection}|
 |`_publicMintConfig`|`PublicMint`|Is the public mint configuration for collection. see{IERC721Collection-PublicMint}|
-|`_platform`|`Platform`|Holds all platform related data. see {IERC721Collection-Platform}|
+|`_platformFeeReceipient`|`address`||
 
 
 ### receive
@@ -356,29 +368,13 @@ function _deployLiquidity(address payable _pool, uint256 _liquidityNftSupply, ui
 function withdraw() internal onlyOwner;
 ```
 
-### setRoyaltyInfo
-
-*Allows creator to change royalty info.*
-
-
-```solidity
-function setRoyaltyInfo(address receiver, uint16 _royaltyFeeBps) external onlyOwner;
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`receiver`|`address`|is the address of the new royalty fee receiver.|
-|`_royaltyFeeBps`|`uint16`|is the new royalty fee bps| 100bps= 1%|
-
-
 ### unlockTrading
 
 Allows creator to permit trading of nfts on secondary marketplaces.
 
 
 ```solidity
-function unlockTrading() public onlyOwner;
+function unlockTrading() internal onlyOwner;
 ```
 
 ### reveal
@@ -545,7 +541,7 @@ function transferFrom(address from, address to, uint256 tokenId) public payable 
 
 
 ```solidity
-function supportsInterface(bytes4 interfaceId) public view override(IERC165, ERC721A) returns (bool);
+function supportsInterface(bytes4 interfaceId) public view override returns (bool);
 ```
 
 ### approve
