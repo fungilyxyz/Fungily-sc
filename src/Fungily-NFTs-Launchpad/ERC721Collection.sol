@@ -98,7 +98,7 @@ contract FungilyDrop is Ownable, ERC721A, IERC721Collection, ReentrancyGuard {
     string public baseURI;
 
     // Fee paid to the platform per nft minted by users.
-    uint256 public constant mintFee = 0.0002 ether;
+    uint256 public constant mintFee = 10; // example fee, set for testing purposes.
 
     // Maximum supply of collection
     uint256 public maxSupply;
