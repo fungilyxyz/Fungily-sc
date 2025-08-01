@@ -5,10 +5,8 @@ import {IERC721Collection} from "./IERC721Collection.sol";
 import {IERC2981} from "@openzeppelin/interfaces/IERC2981.sol";
 import {Ownable} from "@openzeppelin/access/Ownable.sol";
 import {ERC721A} from "@ERC721A/ERC721A.sol";
-import {IERC165} from "@openzeppelin/utils/introspection/ERC165.sol";
 import {MerkleProof} from "@openzeppelin/utils/cryptography/MerkleProof.sol";
 import {ReentrancyGuard} from "@openzeppelin/utils/ReentrancyGuard.sol";
-import {ERC721URIStorage} from "@openzeppelin/token/ERC721/extensions/ERC721URIStorage.sol";
 
 /**
  * $$$$$$$$\                            $$\ $$\                 $$\                                              $$\                                 $$\
@@ -29,7 +27,7 @@ import {ERC721URIStorage} from "@openzeppelin/token/ERC721/extensions/ERC721URIS
  * @author (s) 0xstacker
  * @notice This contract is still under development and has been optimized for quick deployment only.
  */
-contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IERC2981 {
+contract FungilyDrop is Ownable, ERC721A, IERC721Collection, ReentrancyGuard {
     // Maximum number of presale phases that can be added.
     uint8 constant MAX_PRESALE_LIMIT = 5;
 
@@ -58,7 +56,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     uint16 constant MAX_LIQUIDITY_BPS = 5000; // 50%
 
     // Percentage paid to the platform by creator per nft sale
-    uint16 internal immutable SALES_FEE_BPS;
+    uint16 internal constant SALES_FEE_BPS = 500; // 5%
 
     // Royalty fee bps. 100bps => 1%
     uint16 internal royaltyFeeBps;
@@ -100,7 +98,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     string public baseURI;
 
     // Fee paid to the platform per nft minted by users.
-    uint256 public immutable mintFee;
+    uint256 public constant mintFee = 0.0002 ether;
 
     // Maximum supply of collection
     uint256 public maxSupply;
@@ -129,39 +127,28 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     /**
      * @dev Initialize contract by setting necessary data.
      * @param _collection holds all collection related data. see {IERC721Collection-Collection}
-     * @param _platform Holds all platform related data. see {IERC721Collection-Platform}
      * @param _publicMintConfig Is the public mint configuration for collection. see{IERC721Collection-PublicMint}
      */
-    constructor(Collection memory _collection, PublicMint memory _publicMintConfig, Platform memory _platform)
+    constructor(Collection memory _collection, PublicMint memory _publicMintConfig, address _platformFeeReceipient)
         ERC721A(_collection.name, _collection.symbol)
         ReentrancyGuard()
-        Ownable(_collection.owner)
+        Ownable(_collection.creator) // Set the owner to the deployer of the contract
     {
         // Configure collection
         maxSupply = _collection.maxSupply;
 
         _publicMint = _publicMintConfig;
-        if (_collection.royaltyReceipient == address(0)) {
-            royaltyFeeReceiver = _collection.owner;
-        }
-        if (_collection.proceedCollector == address(0)) {
-            proceedCollector = _collection.owner;
-        }
+
         if (!_collection.revealed) {
             revealed = false;
         }
+
         baseURI = _collection.baseURI;
         royaltyFeeBps = _collection.royaltyFeeBps;
         liquidityNftBps = _collection.liquidityNftBps;
         liquidityTokenBps = _collection.liquidityTokenBps;
         // Configure platform
-        if (_platform.feeReceipient == address(0)) {
-            revert ZeroAddress();
-        }
-
-        SALES_FEE_BPS = _platform.salesFeeBps;
-        PLATFORM_FEE_RECEIPIENT = _platform.feeReceipient;
-        mintFee = _platform.mintFee;
+        PLATFORM_FEE_RECEIPIENT = _platformFeeReceipient;
         _setLiquiditySupply(_collection.liquidityNftBps);
     }
 
@@ -366,24 +353,8 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         emit WithdrawFunds(balance);
     }
 
-    /**
-     * @dev Allows creator to change royalty info.
-     * @param receiver is the address of the new royalty fee receiver.
-     * @param _royaltyFeeBps is the new royalty fee bps| 100bps= 1%
-     */
-    function setRoyaltyInfo(address receiver, uint16 _royaltyFeeBps) external onlyOwner {
-        if (receiver == address(0)) {
-            revert InvalidRoyaltyConfig(receiver, _royaltyFeeBps);
-        }
-        if (_royaltyFeeBps > MAX_ROYALTY_FEE) {
-            revert InvalidRoyaltyConfig(receiver, _royaltyFeeBps);
-        }
-        royaltyFeeReceiver = receiver;
-        royaltyFeeBps = _royaltyFeeBps;
-    }
-
     /// @notice Allows creator to permit trading of nfts on secondary marketplaces.
-    function unlockTrading() public onlyOwner {
+    function unlockTrading() internal onlyOwner {
         tradingLocked = false;
     }
 
@@ -438,7 +409,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
         if (_tokenOwner == address(0)) {
             revert OwnerQueryForNonexistentToken();
         }
-        return (royaltyFeeReceiver, (salePrice * royaltyFeeBps / BASIS_POINT));
+        return (owner(), (salePrice * royaltyFeeBps / BASIS_POINT));
     }
 
     /**
@@ -504,7 +475,7 @@ contract FungilyDrop is ERC721A, IERC721Collection, Ownable, ReentrancyGuard, IE
     }
 
     /// @dev see {IERC165-supportsInterface}
-    function supportsInterface(bytes4 interfaceId) public view override(IERC165, ERC721A) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
         return interfaceId == type(IERC2981).interfaceId || interfaceId == type(IERC721Collection).interfaceId
             || super.supportsInterface(interfaceId);
     }
