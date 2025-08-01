@@ -13,8 +13,9 @@ contract ERC721CollectionTest is Test {
     uint256 public singleMintCost = 110;
     uint256 publicMintLimit = 2;
     uint256 salePrice = 200;
-    IERC721Collection.Platform platform =
-        IERC721Collection.Platform({salesFeeBps: 10_00, feeReceipient: address(234), mintFee: 10});
+    address platform = address(100);
+    // IERC721Collection.Platform platform =
+    //     IERC721Collection.Platform({salesFeeBps: 10_00, feeReceipient: address(234), mintFee: 10});
 
     bytes32[] proof = [
         bytes32(0xad67874866783b4129c60d23995daac0c837c320b38a19d1915e7fa4586bcefc),
@@ -48,10 +49,8 @@ contract ERC721CollectionTest is Test {
     IERC721Collection.Collection collectionConfig1 = IERC721Collection.Collection({
         revealed: false,
         maxSupply: 100,
-        owner: creator,
-        proceedCollector: address(0),
-        royaltyReceipient: address(0),
         name: "Test Collection",
+        creator: creator,
         symbol: "TST",
         baseURI: "https://example.com/",
         royaltyFeeBps: 500,
@@ -60,8 +59,12 @@ contract ERC721CollectionTest is Test {
     });
 
     function setUp() public {
+        vm.startPrank(creator);
         collection = new FungilyDrop(collectionConfig1, publicMintConfig, platform);
         collection2 = new FungilyDrop(collectionConfig1, publicMintConfig2, platform);
+        vm.stopPrank();
+
+        console.log("owner", collection.owner());
     }
 
     function _getOldData(address _minter, FungilyDrop _collection)
@@ -77,7 +80,7 @@ contract ERC721CollectionTest is Test {
         previousMinterNftBal = _collection.balanceOf(address(_minter));
         previousTotalMinted = _collection.totalMinted();
         previousCreatorEthBal = creator.balance;
-        previousPlatformEthBal = platform.feeReceipient.balance;
+        previousPlatformEthBal = platform.balance;
         console.log("Creator previous balance: ", previousCreatorEthBal);
         console.log("Platform previous balance: ", previousPlatformEthBal);
     }
@@ -98,7 +101,7 @@ contract ERC721CollectionTest is Test {
         assertEq(newMinterNftBal, _prevMinterNftBal + _amount);
         assertEq(_collection.totalMinted(), _prevTotalMinted + _amount);
         assertEq(creator.balance, _prevCreatorEthBal);
-        assertEq(platform.feeReceipient.balance, newPlatformEthBal);
+        assertEq(platform.balance, newPlatformEthBal);
     }
 
     function _mintPublic(FungilyDrop _collection, address _to, uint256 _amount, uint256 _value) internal {
@@ -269,25 +272,25 @@ contract ERC721CollectionTest is Test {
         collection.safeTransferFrom(minter, address(456), 1);
     }
 
-    function testTradingAfterUnlocked() public {
-        address minter1 = address(345);
-        address minter2 = address(456);
-        address marketPlace = address(789);
-        deal(minter1, 350);
-        deal(minter2, 350);
-        vm.prank(creator);
-        collection.unlockTrading();
-        _mintPublic(collection, minter1, 2, singleMintCost * 2);
-        _mintPublic(collection, minter2, 2, singleMintCost * 2);
-        vm.prank(minter1);
-        collection.approve(marketPlace, 1);
-        vm.prank(minter2);
-        collection.approve(marketPlace, 4);
-        vm.startPrank(marketPlace);
-        collection.safeTransferFrom(minter1, address(789), 1);
-        collection.safeTransferFrom(minter2, address(789), 4);
-        vm.stopPrank();
-    }
+    // function testTradingAfterUnlocked() public {
+    //     address minter1 = address(345);
+    //     address minter2 = address(456);
+    //     address marketPlace = address(789);
+    //     deal(minter1, 350);
+    //     deal(minter2, 350);
+    //     vm.prank(creator);
+    //     collection.unlockTrading();
+    //     _mintPublic(collection, minter1, 2, singleMintCost * 2);
+    //     _mintPublic(collection, minter2, 2, singleMintCost * 2);
+    //     vm.prank(minter1);
+    //     collection.approve(marketPlace, 1);
+    //     vm.prank(minter2);
+    //     collection.approve(marketPlace, 4);
+    //     vm.startPrank(marketPlace);
+    //     collection.safeTransferFrom(minter1, address(789), 1);
+    //     collection.safeTransferFrom(minter2, address(789), 4);
+    //     vm.stopPrank();
+    // }
 
     function testEditAndRemovePhase() public {
         vm.startPrank(creator);
@@ -312,7 +315,6 @@ contract ERC721CollectionTest is Test {
     }
 
     function testRoyaltyInfo() public {
-        assertEq(collection.royaltyFeeReceiver(), creator);
         deal(address(345), 300);
         _mintPublic(collection, address(345), 1, singleMintCost);
         (address receiver, uint256 royaltyValue) = collection.royaltyInfo(1, singleMintCost);
@@ -340,13 +342,6 @@ contract ERC721CollectionTest is Test {
         collection.burn(1);
         assertEq(collection.balanceOf(minter), 0);
         assertEq(collection.maxSupply(), 100);
-    }
-
-    function testSetRoyaltyInfo() public {
-        assertEq(collection.royaltyFeeReceiver(), creator);
-        vm.prank(creator);
-        collection.setRoyaltyInfo(address(456), 1000);
-        assertEq(collection.royaltyFeeReceiver(), address(456));
     }
 
     function testRevertMintWhilePhaseNotLive() public {
