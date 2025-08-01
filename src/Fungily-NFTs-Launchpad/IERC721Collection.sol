@@ -19,20 +19,11 @@ interface IERC721Collection {
         uint16 royaltyFeeBps;
         uint16 liquidityNftBps; // Percentage of NFT to set aside for liquidity supply in the AMM
         uint16 liquidityTokenBps; // Percentage of mint funds to set aside for liquidity supply in the AMM
+        address creator;
         uint64 maxSupply;
-        address owner;
-        address proceedCollector;
-        address royaltyReceipient;
         string name;
         string symbol;
         string baseURI;
-    }
-
-    /// @dev Platform info.
-    struct Platform {
-        uint16 salesFeeBps;
-        address feeReceipient;
-        uint256 mintFee;
     }
 
     /**
